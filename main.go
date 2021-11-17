@@ -24,7 +24,7 @@ type mediaItem struct {
 }
 
 var guard sync.RWMutex
-var cache = map[string]mediaItem{}
+var cache = map[string]entry{}
 
 var index = template.Must(template.ParseFiles("./src/index.html"))
 
@@ -67,18 +67,12 @@ func search(w http.ResponseWriter, req *http.Request) {
 	}
 
 	mediaName := req.FormValue("mediaName")
-	showType := req.FormValue("showType")
-
-	if len(showType) == 0 || showType == "unselected" {
-		http.Redirect(w, req, "/#Error:Please Select TV or Movie", http.StatusTemporaryRedirect)
-		return
-	}
 
 	log.Printf("%s has searched for %s\n", req.RemoteAddr, strconv.Quote(mediaName))
 
 	var results []entry
 	if len(mediaName) != 0 {
-		results, err = searchPirateBay(mediaName, 10)
+		results, err = searchPirateBay(mediaName, 100)
 		if err != nil {
 			log.Printf("%s has had an error searching piraIte bay: %s\n", req.RemoteAddr, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -105,14 +99,14 @@ func search(w http.ResponseWriter, req *http.Request) {
 		for _, result := range results {
 
 			guard.RLock()
-			cache[result.Identifier] = mediaItem{result.Magnet, showType == "movieSelector"}
+			cache[result.Identifier] = result
 			guard.RUnlock()
 
 			toManage = append(toManage, result.Identifier)
 		}
 
 		go func(s []string) {
-			<-time.After(50 * time.Minute)
+			<-time.After(20 * time.Minute)
 
 			guard.Lock()
 			for _, id := range s {
@@ -146,39 +140,41 @@ func queueDownload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	identifier := req.FormValue("identifier")
-	if out, ok := cache[identifier]; ok {
-		outputPath := "/mnt/drives/albert"
-		directory := "Movies"
-		if !out.Movie {
-			directory = "TV"
-		}
+	ids := req.Form["toDownload"]
 
-		log.Printf("%s is queueing new magnet for download to %s\n", req.RemoteAddr, directory)
-
-		outputPath = path.Join(outputPath, directory)
-
-		cmd := exec.Command("/usr/bin/transmission-remote", "-a", out.Magnet, "-w", outputPath)
-
-		err := cmd.Start()
-		if err != nil {
-			log.Printf("%s has failed to queue new magnet for download: %s\n", req.RemoteAddr, err)
-
-			http.Redirect(w, req, "/#Error:Something went wrong, tell me about this!", http.StatusTemporaryRedirect)
-			log.Println("Error running remote", err)
-			return
-		}
-
-		log.Printf("%s has successfully queued\n", req.RemoteAddr)
-
-		http.Redirect(w, req, "/#Success:Movie has been queued to download, you may have to wait a bit!", http.StatusTemporaryRedirect)
+	if len(ids) == 0 {
+		http.Redirect(w, req, "/#Error:No items selected to download, try again", http.StatusTemporaryRedirect)
 		return
 	}
 
-	log.Printf("%s has tried an invalid identifier\n", req.RemoteAddr)
+	commandLine := []string{}
+	outputDir := ""
+	queuedItems := 0
+	for _, id := range ids {
+		if out, ok := cache[id]; ok {
+			commandLine = append(commandLine, "-a", out.Magnet)
+			outputDir = out.OutputDirectory
+			queuedItems++
+			continue
+		}
+	}
+	commandLine = append(commandLine, "-w", outputDir)
 
-	w.WriteHeader(http.StatusNotFound)
-	w.Write([]byte("That was not found, try going back and searching again. If this happens to much. Give me an email with the search term you use :)"))
+	cmd := exec.Command("/usr/bin/transmission-remote", commandLine...)
+
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("%s has failed to queue new magnet for download: %s\n", req.RemoteAddr, err)
+
+		http.Redirect(w, req, "/#Error:Something went wrong, tell me about this!", http.StatusTemporaryRedirect)
+		log.Println("Error running remote", err)
+		return
+	}
+
+	log.Printf("%s has successfully queued\n", req.RemoteAddr)
+
+	http.Redirect(w, req, fmt.Sprintf("/#Success:%d item/s have been queued to download, you may have to wait a bit!", queuedItems), http.StatusTemporaryRedirect)
+	return
 
 }
 
@@ -200,7 +196,7 @@ func main() {
 }
 
 type entry struct {
-	Magnet, Details, Sharers, Identifier string
+	Magnet, Details, Sharers, Identifier, OutputDirectory string
 }
 
 func searchPirateBay(searchItem string, number int) (results []entry, err error) {
@@ -251,9 +247,23 @@ func parseTableRow(tokenizer *html.Tokenizer) (output entry) {
 			if token.Data == "td" {
 
 				if len(token.Attr) == 0 {
-					magnet, name := getLink(tokenizer)
+					magnet, name := getMagnet(tokenizer)
 					output.Details = name
 					output.Magnet = magnet
+				} else if len(token.Attr) == 1 && token.Attr[0].Val == "vertTh" {
+					tokenizer.Next()
+					tokenizer.Next()
+					tokenizer.Next()
+					typeOfMedia := strings.ToLower(string(tokenizer.Text()))
+
+					outputPath := "/mnt/drives/albert"
+					directory := "Movies"
+					if strings.Contains(typeOfMedia, "tv shows") {
+						directory = "TV"
+					}
+
+					output.OutputDirectory = path.Join(outputPath, directory)
+
 				} else if len(token.Attr) == 1 && token.Attr[0].Val == "right" {
 					tokenizer.Next()
 					output.Sharers = string(tokenizer.Text())
@@ -269,7 +279,7 @@ func parseTableRow(tokenizer *html.Tokenizer) (output entry) {
 	return
 }
 
-func getLink(tokenizer *html.Tokenizer) (href, name string) {
+func getMagnet(tokenizer *html.Tokenizer) (href, name string) {
 
 	for {
 		tt := tokenizer.Next()
@@ -296,7 +306,6 @@ func getLink(tokenizer *html.Tokenizer) (href, name string) {
 		}
 	}
 
-	return "", ""
 }
 
 func find(name, val string, entries []html.Attribute) int {

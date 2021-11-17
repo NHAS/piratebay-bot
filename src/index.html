@@ -40,6 +40,10 @@
             margin-top: 2rem;
             margin-bottom: 2rem;
         }
+
+        input[type='checkbox'] {
+            transform: scale(2.5);
+        }
     </style>
 
     <script src="/src/smol.js"></script>
@@ -55,34 +59,6 @@
         <div class="row" style="padding-left: 1rem;">
             <form action="/search" method="POST">
                 <div class="form-row align-items-center">
-
-
-
-
-                    <div class="col-auto">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="showType" id="tvSelector" value="tv"
-                                checked>
-                            <label class="form-check-label" for="tvSelector">
-                                TV Show
-                            </label>
-                        </div>
-                    </div>
-
-                    <input style="display:none" type="radio" name="showType" id="movieSelector" value="unselected"
-                        checked>
-
-                    <div class="col-auto">
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="showType" id="movieSelector"
-                                value="movie">
-                            <label class="form-check-label" for="movieSelector">
-                                Movie
-                            </label>
-                        </div>
-                    </div>
-
-
                     <div class="col-auto">
                         <div class="form-group mb-2">
                             <label for="mediaName" class="sr-only">Media Name</label>
@@ -106,43 +82,55 @@
         {{if .}}
         <h3>Results</h3>
 
-        <p>To queue a movie item for download click the "download" button. Good qualities are 720p and above
+        <p> <b>Instructions.</b> To download a Movie or TV show, select it from the list below. Then click the
+            'Download' button on the bottom right</p>
+
+
+        <p>Good movie qualities are 720p and above
             (1080p),
             try and pick the entry that has the highest quality and the highest number of sharers, as if there are
             lots
             of shares it'll download quickly</p>
 
 
-        <div class="container-fluid">
+        <div class="container-fluid" style="padding-bottom: 5rem;">
             <div class="row colorboxes">
                 <div class="col">
                     Name
                 </div>
-                <div class="col col-lg-2">
+                <div class="col col-lg-2" style="text-align: center;">
                     Sharers
                 </div>
-                <div class="col col-lg-2">
-                    Download
+                <div class="col col-lg-2 " style="text-align: center;">
+                    Select
                 </div>
             </div>
 
-            {{range $val := .}}
-            <div class="row colorboxes">
+            <form action="/download" method="POST">
+                {{range $val := .}}
+                <div class="row colorboxes">
+                    <div class="col">
+                        <p style="overflow-wrap: break-word"> {{$val.Details}}</p>
+                    </div>
+                    <div class="col col-lg-2" style="text-align: center;">
+                        <p style=" overflow-wrap: break-word">{{$val.Sharers}}</p>
+                    </div>
+                    <div class="col col-lg-2">
+                        <div style="text-align: center; vertical-align: center;" class="form-check">
+                            <input class="form-check-input" type="checkbox" name="toDownload"
+                                value="{{$val.Identifier}}">
+                        </div>
+                    </div>
+                </div>
+                {{end}}
                 <div class="col">
-                    <p style="overflow-wrap: break-word"> {{$val.Details}}</p>
-                </div>
-                <div class="col col-lg-2">
-                    <p style="overflow-wrap: break-word">{{$val.Sharers}}</p>
-                </div>
-                <div class="col col-lg-2">
-                    <form action="/download" method="POST">
-                        <input style="display:none" type="text" name="identifier" value="{{$val.Identifier}}">
-                        <button type="submit" class="btn btn-primary">Download</button>
-                    </form>
 
+                    <button type="submit" class="btn btn-primary"
+                        style="position:fixed; bottom: 1rem; right: 7%; margin:0;padding: 1rem 1rem;">Download</button>
                 </div>
-            </div>
-            {{end}}
+
+            </form>
+
 
         </div>
 
