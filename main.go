@@ -93,7 +93,7 @@ func search(w http.ResponseWriter, req *http.Request) {
 	if len(mediaName) != 0 {
 		results, err = searchPirateBay(mediaName, 100)
 		if err != nil {
-			log.Printf("%s has had an error searching piraIte bay: %s\n", getRealIPAddress(req), err)
+			log.Printf("%s has had an error searching pirate bay: %s\n", getRealIPAddress(req), err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "%s\n", err)
 
@@ -115,14 +115,13 @@ func search(w http.ResponseWriter, req *http.Request) {
 		}
 
 		toManage := []string{}
+
+		guard.Lock()
 		for _, result := range results {
-
-			guard.RLock()
 			cache[result.Identifier] = result
-			guard.RUnlock()
-
 			toManage = append(toManage, result.Identifier)
 		}
+		guard.Unlock()
 
 		go func(s []string) {
 			<-time.After(20 * time.Minute)
@@ -174,15 +173,24 @@ func queueDownload(w http.ResponseWriter, req *http.Request) {
 	commandLine := []string{}
 	outputDir := ""
 	queuedItems := 0
+
+	guard.RLock()
 	for _, id := range ids {
 		if out, ok := cache[id]; ok {
+			if len(out.Magnet) > 0 && out.Magnet[0] != 'm' {
+				//Skip any malformed magnet that may be a flag
+				continue
+			}
+
 			commandLine = append(commandLine, "-a", out.Magnet)
 			outputDir = out.OutputDirectory
 			queuedItems++
 			continue
 		}
 	}
-	commandLine = append(commandLine, "-w", outputDir)
+	guard.RUnlock()
+
+	commandLine = append(commandLine, "--no-torrent-done-script", "-w", outputDir)
 
 	cmd := exec.Command("/usr/bin/transmission-remote", commandLine...)
 
@@ -225,7 +233,10 @@ type entry struct {
 
 func searchPirateBay(searchItem string, number int) (results []entry, err error) {
 
-	resp, err := http.Get("https://thepiratebay10.org/search/" + strconv.Quote(searchItem) + "/1/99/0")
+	client := http.Client{
+		Timeout: 10 * time.Second,
+	}
+	resp, err := client.Get("https://thepiratebay10.org/search/" + strconv.Quote(searchItem) + "/1/99/0")
 	if err != nil {
 		return nil, err
 	}
