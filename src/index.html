@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <title>Downloader</title>
+
+    <link rel="canonical" href="https://certainlyawesome.com/downloader">
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <!-- Custom styles for this template -->
+    <style>
+        body {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        h3 {
+            margin-top: 2rem;
+        }
+
+        .row .row {
+            margin-top: 1rem;
+            margin-bottom: 0;
+        }
+
+        .colorboxes [class*="col"] {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            background-color: rgba(86, 61, 124, .15);
+            border: 1px solid rgba(86, 61, 124, .2);
+        }
+
+        hr {
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+
+    <script src="/src/smol.js"></script>
+
+</head>
+
+<body>
+    <div class="container">
+
+        <h1>Downloader</h1>
+        <p class="lead">A handy dandy tool to schedule new movies and TV shows for download</p>
+
+        <div class="row" style="padding-left: 1rem;">
+            <form action="/search" method="POST">
+                <div class="form-row align-items-center">
+
+
+
+
+                    <div class="col-auto">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="showType" id="tvSelector" value="tv"
+                                checked>
+                            <label class="form-check-label" for="tvSelector">
+                                TV Show
+                            </label>
+                        </div>
+                    </div>
+
+                    <input style="display:none" type="radio" name="showType" id="movieSelector" value="unselected"
+                        checked>
+
+                    <div class="col-auto">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="showType" id="movieSelector"
+                                value="movie">
+                            <label class="form-check-label" for="movieSelector">
+                                Movie
+                            </label>
+                        </div>
+                    </div>
+
+
+                    <div class="col-auto">
+                        <div class="form-group mb-2">
+                            <label for="mediaName" class="sr-only">Media Name</label>
+                            <input type="text" name="mediaName" class="form-control" id="mediaName"
+                                placeholder="No Time To Die">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary mb-2">Search</button>
+                    </div>
+
+                </div>
+
+
+            </form>
+        </div>
+
+        <div class="alert alert-success" role="alert" id="happy" style="display:none"></div>
+        <div class="alert alert-danger" role="alert" id="sad" style="display:none"></div>
+
+        {{if .}}
+        <h3>Results</h3>
+
+        <p>To queue a movie item for download click the "download" button. Good qualities are 720p and above
+            (1080p),
+            try and pick the entry that has the highest quality and the highest number of sharers, as if there are
+            lots
+            of shares it'll download quickly</p>
+
+
+        <div class="container-fluid">
+            <div class="row colorboxes">
+                <div class="col">
+                    Name
+                </div>
+                <div class="col col-lg-2">
+                    Sharers
+                </div>
+                <div class="col col-lg-2">
+                    Download
+                </div>
+            </div>
+
+            {{range $val := .}}
+            <div class="row colorboxes">
+                <div class="col">
+                    <p style="overflow-wrap: break-word"> {{$val.Details}}</p>
+                </div>
+                <div class="col col-lg-2">
+                    <p style="overflow-wrap: break-word">{{$val.Sharers}}</p>
+                </div>
+                <div class="col col-lg-2">
+                    <form action="/download" method="POST">
+                        <input style="display:none" type="text" name="identifier" value="{{$val.Identifier}}">
+                        <button type="submit" class="btn btn-primary">Download</button>
+                    </form>
+
+                </div>
+            </div>
+            {{end}}
+
+        </div>
+
+
+
+        {{end}}
+
+    </div> <!-- /container -->
+</body>
+
+</html>
