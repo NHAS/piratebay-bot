@@ -53,6 +53,11 @@ func serveIndex(w http.ResponseWriter, req *http.Request) {
 func search(w http.ResponseWriter, req *http.Request) {
 	log.Println(req.RemoteAddr, "has tried to search: ", req.Method)
 
+	if req.Method == "GET" {
+		http.Redirect(w, req, "/", http.StatusMovedPermanently)
+		return
+	}
+
 	if req.Method != "POST" {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Unsupported method")
@@ -127,6 +132,11 @@ func search(w http.ResponseWriter, req *http.Request) {
 
 func queueDownload(w http.ResponseWriter, req *http.Request) {
 	log.Println(req.RemoteAddr, "has tried to queue download: ", req.Method)
+	if req.Method == "GET" {
+		http.Redirect(w, req, "/", http.StatusMovedPermanently)
+		return
+	}
+
 	if req.Method != "POST" {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Unsupported method")
@@ -251,14 +261,31 @@ func parseTableRow(tokenizer *html.Tokenizer) (output entry) {
 					output.Details = name
 					output.Magnet = magnet
 				} else if len(token.Attr) == 1 && token.Attr[0].Val == "vertTh" {
-					tokenizer.Next()
-					tokenizer.Next()
-					tokenizer.Next()
-					typeOfMedia := strings.ToLower(string(tokenizer.Text()))
+
+					//Section, Catagory
+					itemAttributes := []string{}
+					for {
+						m := tokenizer.Next()
+						tag, _ := tokenizer.TagName()
+						if m == html.ErrorToken {
+							return
+						}
+						if m == html.StartTagToken && string(tag) == "a" {
+							tokenizer.Next()
+							itemAttributes = append(itemAttributes, strings.ToLower(string(tokenizer.Text())))
+							if len(itemAttributes) == 2 {
+								break
+							}
+						}
+					}
+
+					if strings.Contains(itemAttributes[0], "porn") {
+						return
+					}
 
 					outputPath := "/mnt/drives/albert"
 					directory := "Movies"
-					if strings.Contains(typeOfMedia, "tv shows") {
+					if strings.Contains(itemAttributes[1], "tv shows") {
 						directory = "TV"
 					}
 
