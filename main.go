@@ -23,6 +23,8 @@ type mediaItem struct {
 	Movie  bool
 }
 
+var index = template.Must(template.ParseFiles("./src/index.html"))
+
 var guard sync.RWMutex
 var cache = map[string]entry{}
 
@@ -53,8 +55,6 @@ func serveIndex(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Unsupported method")
 		return
 	}
-
-	var index = template.Must(template.ParseFiles("./src/index.html"))
 
 	err := index.ExecuteTemplate(w, "index.html", nil)
 	if err != nil {
@@ -136,7 +136,6 @@ func search(w http.ResponseWriter, req *http.Request) {
 		}(toManage)
 
 	}
-	var index = template.Must(template.ParseFiles("./src/index.html"))
 
 	err = index.ExecuteTemplate(w, "index.html", results)
 	if err != nil {
