@@ -28,6 +28,20 @@ var cache = map[string]entry{}
 
 var index = template.Must(template.ParseFiles("./src/index.html"))
 
+func getRealIPAddress(req *http.Request) string {
+	forwarded := req.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		first := strings.Split(forwarded, ",")
+		if len(first) == 0 {
+			return req.RemoteAddr
+		}
+
+		return first[0]
+	}
+
+	return req.RemoteAddr
+}
+
 func check(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -35,7 +49,7 @@ func check(err error) {
 }
 
 func serveIndex(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.RemoteAddr, "has requested index: ", req.Method)
+	log.Println(getRealIPAddress(req), "has requested index: ", req.Method)
 	if req.Method != "GET" && req.Method != "POST" {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "Unsupported method")
@@ -51,7 +65,7 @@ func serveIndex(w http.ResponseWriter, req *http.Request) {
 }
 
 func search(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.RemoteAddr, "has tried to search: ", req.Method)
+	log.Println(getRealIPAddress(req), "has tried to search: ", req.Method)
 
 	if req.Method == "GET" {
 		http.Redirect(w, req, "/", http.StatusMovedPermanently)
@@ -73,13 +87,13 @@ func search(w http.ResponseWriter, req *http.Request) {
 
 	mediaName := req.FormValue("mediaName")
 
-	log.Printf("%s has searched for %s\n", req.RemoteAddr, strconv.Quote(mediaName))
+	log.Printf("%s has searched for %s\n", getRealIPAddress(req), strconv.Quote(mediaName))
 
 	var results []entry
 	if len(mediaName) != 0 {
 		results, err = searchPirateBay(mediaName, 100)
 		if err != nil {
-			log.Printf("%s has had an error searching piraIte bay: %s\n", req.RemoteAddr, err)
+			log.Printf("%s has had an error searching piraIte bay: %s\n", getRealIPAddress(req), err)
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "%s\n", err)
 
@@ -92,7 +106,7 @@ func search(w http.ResponseWriter, req *http.Request) {
 		}
 
 		if len(cache) > 10000 {
-			log.Printf("%s has exhausted cache\n", req.RemoteAddr)
+			log.Printf("%s has exhausted cache\n", getRealIPAddress(req))
 
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintln(w, "Too many cache entries, please wait 40 mins", err)
@@ -131,7 +145,7 @@ func search(w http.ResponseWriter, req *http.Request) {
 }
 
 func queueDownload(w http.ResponseWriter, req *http.Request) {
-	log.Println(req.RemoteAddr, "has tried to queue download: ", req.Method)
+	log.Println(getRealIPAddress(req), "has tried to queue download: ", req.Method)
 	if req.Method == "GET" {
 		http.Redirect(w, req, "/", http.StatusMovedPermanently)
 		return
@@ -174,14 +188,14 @@ func queueDownload(w http.ResponseWriter, req *http.Request) {
 
 	err = cmd.Start()
 	if err != nil {
-		log.Printf("%s has failed to queue new magnet for download: %s\n", req.RemoteAddr, err)
+		log.Printf("%s has failed to queue new magnet for download: %s\n", getRealIPAddress(req), err)
 
 		http.Redirect(w, req, "/#Error:Something went wrong, tell me about this!", http.StatusTemporaryRedirect)
 		log.Println("Error running remote", err)
 		return
 	}
 
-	log.Printf("%s has successfully queued\n", req.RemoteAddr)
+	log.Printf("%s has successfully queued\n", getRealIPAddress(req))
 
 	http.Redirect(w, req, fmt.Sprintf("/#Success:%d item/s have been queued to download, you may have to wait a bit!", queuedItems), http.StatusTemporaryRedirect)
 	return
