@@ -11,10 +11,6 @@ import (
 	"strings"
 )
 
-var drives = map[string]string{
-	"Albert": "/home/nhas/Desktop",
-}
-
 func displayAdvanced(w http.ResponseWriter, req *http.Request) {
 	err := verifyCookie(req)
 	if err != nil {

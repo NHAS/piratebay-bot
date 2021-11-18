@@ -4,8 +4,10 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +19,7 @@ import (
 
 var siteCookieEncryption cipher.AEAD
 var executableDirectory string
+var drives map[string]string
 
 func getRealIPAddress(req *http.Request) string {
 	forwarded := req.Header.Get("X-Forwarded-For")
@@ -43,7 +46,17 @@ func startWebserver(args ...string) {
 		log.Fatal("Supply a listening address for the webserver")
 	}
 
-	err := loadTemplates(filepath.Join(executableDirectory, "src"))
+	contents, err := ioutil.ReadFile(filepath.Join(executableDirectory, "config.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal(contents, &drives)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = loadTemplates(filepath.Join(executableDirectory, "src"))
 	if err != nil {
 		log.Fatal(err)
 	}
