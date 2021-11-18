@@ -1,0 +1,56 @@
+{{define "title"}} Downloader : Advanced {{end}}
+
+{{define "content"}}
+
+
+
+
+<h1 style="margin-bottom: 0.5rem;">Downloader <i>Advanced</i> Edition</h1>
+<p style="font-size: 1.25rem; font-weight: 300; margin-top: 0;">You wanted to upload your own torrents easily? Well now
+    you can.</p>
+
+
+<div style="margin-top: 2rem;">
+    <form action="/manualqueue" method="POST" style=" width:100%">
+
+        <div style="width: 100%; min-width: 241px;">
+            <textarea wrap="off" name="magnets" style="height: 25em;" class="form-control"
+                placeholder="Enter Magnets Here, One per line"></textarea>
+        </div>
+
+        <div style="padding-top: 1rem">
+            <input style="display:none" type="radio" name="mediaType" value="unselected" checked>
+            <input type="radio" name="mediaType" id="Movie" value="movie">
+            <label for="Movie">
+                Movie
+            </label>
+            <input type="radio" name="mediaType" id="TV Show" value="tv">
+            <label for="TV Show">
+                TV Show
+            </label>
+        </div>
+        <div style="display:block; padding-top: 1rem">
+            <button type="submit" class="btn"
+                style="width: 130px; float: left; background-color:mediumseagreen">Upload</button>
+
+            <select class="form-control" style="width: 10rem; margin-left: 1rem; width: 20rem; display:inline"
+                name="drive">
+                {{range $driveName, $driveDetails := .}}
+                <option value="{{$driveName}}">{{$driveName}} - {{$driveDetails}} Full</option>
+                {{end}}
+            </select>
+
+            <a href="/" style="appearance: button; text-decoration: none; float: right" class="btn">Home</a>
+
+        </div>
+    </form>
+</div>
+
+
+<div class="alert alert-success" role="alert" id="happy" style="display:none"></div>
+<div class="alert alert-danger" role="alert" id="sad" style="display:none"></div>
+
+
+
+
+{{end}}

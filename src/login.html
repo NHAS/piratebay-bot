@@ -1,0 +1,18 @@
+{{define "title"}} Login {{end}}
+{{define "content"}}
+
+<div style="width: 50%; margin: auto;">
+    <h1 style="margin-bottom: 0.5rem;">Login</h1>
+    <p style="font-size: 1.25rem; font-weight: 300; margin-top: 0;">Login here to upload your own magnet files.
+    </p>
+    <form action="/auth" method="POST" autocomplete="off">
+        <input type="text" name="username" class="form-control" placeholder="Username" style="margin-bottom: 1rem; "
+            autofocus>
+        <input type="password" name="password" class="form-control" placeholder="Password" style="margin-bottom: 1rem;">
+        <button type="submit" class="btn" style="width: 130px">Login</button>
+    </form>
+    <div class="alert alert-danger" role="alert" id="sad" style="display:none"></div>
+</div>
+
+
+{{end}}

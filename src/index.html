@@ -1,274 +1,91 @@
-<!doctype html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <title>Downloader</title>
-
-    <link rel="canonical" href="https://certainlyawesome.com/downloader">
+{{define "title"}} Downloader {{end}}
+{{define "content"}}
+<div style="text-align: center;">
+    <h1 style="margin-bottom: 0.5rem;">Downloader</h1>
+    <p style="font-size: 1.25rem; font-weight: 300; margin-top: 0;">A handy dandy tool to search
+        for movies & TV
+        shows to
+        download onto the movie server</p>
 
 
-    <!-- Custom styles for this template -->
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            font-weight: 400;
-            line-height: 1.5;
-            color: #212529;
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
+    <div style="margin-top: 2rem;">
+        <form action="/search" method="POST">
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-family: inherit;
-            font-weight: 500;
-            line-height: 1.2;
-            color: inherit;
-            font-size: 1.5rem;
-        }
+            <input style="margin-bottom: 1rem;" type="text" name="mediaName" class="form-control" id="mediaName"
+                placeholder="Enter Media Name Here" autofocus>
 
-        h1 {
-            font-size: 2.5rem;
-        }
+            <button type="submit" class="btn">Search</button>
 
-        h3 {
-            font-size: 1.75rem;
-        }
+            <a href="/advanced"
+                style="margin-left:0.25rem;appearance: button;background-color: lightsalmon; text-decoration: none"
+                class=" btn">Manually
+                Add Movie</a>
 
-        h4 {
-            margin-top: 0;
-            margin-bottom: 0;
-            margin-left: 1rem;
+        </form>
+    </div>
 
-        }
+    <div class="alert alert-success" role="alert" id="happy" style="display:none"></div>
+    <div class="alert alert-danger" role="alert" id="sad" style="display:none"></div>
+</div>
 
-        .btn:hover {
-            color: #fff;
-            background-color: #0069d9;
-            border-color: #0062cc;
-        }
+{{if .}}
+<h3 style="margin-bottom: 0.5rem;">Results</h3>
 
-        .btn {
-            cursor: pointer;
-            color: #fff;
-            background-color: #007bff;
-            border-color: #007bff;
-            margin-bottom: .5rem !important;
-            display: inline-block;
-            font-weight: 400;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            border: 1px solid transparent;
-            border-top-color: transparent;
-            border-right-color: transparent;
-            border-bottom-color: transparent;
-            border-left-color: transparent;
-            padding: .375rem .75rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            border-radius: .25rem;
-            text-transform: none;
-            box-sizing: border-box;
-        }
+<p style="margin-top: 0;"> <b>Instructions.</b> To download a Movie or TV show, select it
+    from the list below. Then click the
+    'Download' button on the bottom right</p>
 
-        td,
-        th {
-            margin-bottom: 0;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-            background-color: rgba(86, 61, 124, .15);
-            border: 1px solid rgba(86, 61, 124, .2);
-        }
 
-        hr {
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-        }
+<p style="margin-top: 0;">Good movie qualities are 720p and above
+    (1080p),
+    try and pick the entry that has the highest quality and the highest number of sharers, as if there are
+    lots
+    of shares it'll download quickly</p>
 
-        input[type='checkbox'] {
-            transform: scale(2.5);
-        }
+<form action="/download" method="POST">
+    <table id="searchResults">
+        <thead>
+            <tr>
+                <th>
+                    <h4> Name </h4>
+                </th>
 
-        #content {
-            position: relative;
-            text-align: left;
-            min-width: 960px;
-            max-width: 1200px;
-            margin: 15px auto 0px auto;
-        }
+                <th style="text-align: center;">
+                    <h4 style="margin-left: 0">Sharers</h4>
+                </th>
 
-        table p {
-            margin-top: 0;
-            margin-bottom: 0;
-            margin-left: 1rem;
-        }
+                <th style="text-align: center;">
+                    <h4 style="margin-left: 0;">Select</h4>
+                </th>
+            </tr>
 
-        #main-content {
-            margin-left: 130px;
-            margin-bottom: 0;
-            padding-right: 10px;
-            margin-top: 0;
-            overflow: hidden;
-            position: relative;
-            z-index: 90;
-        }
-
-        table#searchResults {
-            font-size: 1em;
-            border-collapse: collapse;
-            border-spacing: 1px;
-            margin: 0;
-            text-align: left;
-            width: 100%;
-            min-width: 400px;
-        }
-
-        .form-control {
-            display: block;
-            width: 100%;
-            margin-left: 2px;
-            padding: .375rem .75rem;
-            font-size: 1rem;
-            line-height: 1.5;
-            color: #495057;
-            background-color: #fff;
-            background-clip: padding-box;
-            border: 2px solid #ced4da;
-            border-radius: .25rem;
-            box-sizing: border-box;
-        }
-
-        .alert {
-            position: relative;
-            padding: .75rem 1.25rem;
-            margin-bottom: 1rem;
-            margin-top: 1rem;
-            border: 1px solid transparent;
-            border-top-color: transparent;
-            border-right-color: transparent;
-            border-bottom-color: transparent;
-            border-left-color: transparent;
-            border-radius: .25rem;
-        }
-
-        .alert-danger {
-            color: #721c24;
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-        }
-
-        .alert-success {
-            color: #155724;
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-    </style>
-
-    <script src="/src/smol.js"></script>
-
-</head>
-
-<body>
-    <div id="content">
-
-        <div id="main-content">
-
-            <h1 style="margin-bottom: 0.5rem;">Downloader</h1>
-            <p style="font-size: 1.25rem; font-weight: 300; margin-top: 0;">A handy dandy tool to search
-                for movies & TV
-                shows to
-                download onto the movie server</p>
-
-            <form action="/search" method="POST">
-                <div style="margin-top: 2rem; display:table">
-                    <div style="display:table-cell; width: 60%; min-width: 241px;">
-                        <input type="text" name="mediaName" class="form-control" id="mediaName"
-                            placeholder="Enter Media Name Here">
+        </thead>
+        <tbody style="position:relative">
+            {{range $val := .}}
+            <tr>
+                <td>
+                    <p>{{$val.Details}}</p>
+                </td>
+                <td style="text-align: center;">
+                    {{$val.Sharers}}
+                </td>
+                <td style="padding-bottom: 1.5rem;">
+                    <div style="text-align: center; vertical-align: center;">
+                        <input type="checkbox" name="toDownload" value="{{$val.Identifier}}">
                     </div>
+                </td>
 
-                    <div style="display:table-cell; vertical-align: middle; padding-left: 1rem;">
-                        <button type="submit" class="btn">Search</button>
-                    </div>
-
-                </div>
-            </form>
-
-            <div class="alert alert-success" role="alert" id="happy" style="display:none"></div>
-            <div class="alert alert-danger" role="alert" id="sad" style="display:none"></div>
-
-            {{if .}}
-            <h3 style="margin-bottom: 0.5rem;">Results</h3>
-
-            <p style="margin-top: 0;"> <b>Instructions.</b> To download a Movie or TV show, select it
-                from the list below. Then click the
-                'Download' button on the bottom right</p>
-
-
-            <p style="margin-top: 0;">Good movie qualities are 720p and above
-                (1080p),
-                try and pick the entry that has the highest quality and the highest number of sharers, as if there are
-                lots
-                of shares it'll download quickly</p>
-
-            <form action="/download" method="POST">
-                <table id="searchResults">
-                    <thead>
-                        <tr>
-                            <th>
-                                <h4> Name </h4>
-                            </th>
-
-                            <th style="text-align: center;">
-                                <h4 style="margin-left: 0">Sharers</h4>
-                            </th>
-
-                            <th style="text-align: center;">
-                                <h4 style="margin-left: 0;">Select</h4>
-                            </th>
-                        </tr>
-
-                    </thead>
-                    <tbody style="position:relative">
-                        {{range $val := .}}
-                        <tr>
-                            <td>
-                                <p>{{$val.Details}}</p>
-                            </td>
-                            <td style="text-align: center;">
-                                {{$val.Sharers}}
-                            </td>
-                            <td style="padding-bottom: 1.5rem;">
-                                <div style="text-align: center; vertical-align: center;">
-                                    <input type="checkbox" name="toDownload" value="{{$val.Identifier}}">
-                                </div>
-                            </td>
-
-                        </tr>
-                        {{end}}
-                    </tbody>
-                </table>
-                <button type="submit" class="btn"
-                    style="position:fixed; bottom: 1rem; right: 7%; margin:0;padding: 1rem 1rem;">Download</button>
-            </form>
-        </div>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    <button type="submit" class="btn"
+        style="position:fixed; bottom: 1rem; right: 7%; margin:0;padding: 1rem 1rem;">Download</button>
+</form>
+</div>
 
 
 
-        {{end}}
+{{end}}
 
-    </div> <!-- /container -->
-</body>
-
-</html>
+{{end}}
