@@ -41,7 +41,8 @@ func displayLogin(w http.ResponseWriter, req *http.Request) {
 	err := renderTemplate(w, "login.html", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Something went wrong")
+		log.Printf("Use has triggered an error %s\n", err)
 		return
 	}
 

@@ -33,7 +33,8 @@ func serveIndex(w http.ResponseWriter, req *http.Request) {
 	err := renderTemplate(w, "index.html", nil)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Something went wrong")
+		log.Printf("Use has triggered an error %s\n", err)
 	}
 
 }
@@ -55,7 +56,8 @@ func search(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Something went wrong")
+		log.Printf("Use has triggered an error %s\n", err)
 		return
 	}
 
@@ -69,7 +71,7 @@ func search(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Printf("%s has had an error searching pirate bay: %s\n", getRealIPAddress(req), err)
 			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "%s\n", err)
+			fmt.Fprintf(w, "Something went wrong")
 
 			return
 		}
@@ -113,7 +115,8 @@ func search(w http.ResponseWriter, req *http.Request) {
 	err = renderTemplate(w, "index.html", results)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Something went wrong")
+		log.Printf("Use has triggered an error %s\n", err)
 	}
 }
 
@@ -133,7 +136,8 @@ func queueDownload(w http.ResponseWriter, req *http.Request) {
 	err := req.ParseForm()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "%s\n", err)
+		fmt.Fprintf(w, "Something went wrong")
+		log.Printf("Use has triggered an error %s\n", err)
 		return
 	}
 
@@ -193,7 +197,8 @@ func searchPirateBay(searchItem string, number int) (results []entry, err error)
 	client := http.Client{
 		Timeout: 10 * time.Second,
 	}
-	resp, err := client.Get("https://thepiratebay10.org/search/" + strconv.Quote(searchItem) + "/1/99/0")
+
+	resp, err := client.Get("https://thepiratebay10.org/search/" + html.EscapeString(searchItem) + "/1/99/0")
 	if err != nil {
 		return nil, err
 	}
