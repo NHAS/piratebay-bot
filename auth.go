@@ -13,9 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -69,9 +67,9 @@ func doLogin(w http.ResponseWriter, req *http.Request) {
 
 	log.Println(getRealIPAddress(req), "has authed")
 
-	mintCookie(w)
+	mintCookie(w, username)
 
-	http.Redirect(w, req, "/advanced", http.StatusFound)
+	http.Redirect(w, req, "/", http.StatusFound)
 }
 
 func generateFromPassword(password string) (encodedHash string, err error) {
@@ -198,24 +196,19 @@ func RemoveUser(username string) error {
 	return storeUsersDb(users)
 }
 
-func mintCookie(w http.ResponseWriter) {
+func mintCookie(w http.ResponseWriter, username string) {
 
-	age := 2 * 60 * 60
-	cookieExpiry := time.Now().Unix() + int64(age)
-	msg := []byte(fmt.Sprintf("%d", cookieExpiry))
-
-	nonce := make([]byte, siteCookieEncryption.NonceSize(), siteCookieEncryption.NonceSize()+len(msg)+siteCookieEncryption.Overhead())
+	nonce := make([]byte, siteCookieEncryption.NonceSize(), siteCookieEncryption.NonceSize()+len(username)+siteCookieEncryption.Overhead())
 	if _, err := rand.Read(nonce); err != nil {
 		panic(err)
 	}
 
 	// Encrypt the message and append the ciphertext to the nonce.
-	encryptedMsg := siteCookieEncryption.Seal(nonce, nonce, msg, nil)
+	encryptedMsg := siteCookieEncryption.Seal(nonce, nonce, []byte(username), nil)
 
 	c := http.Cookie{
 		Name:     cookieName,
 		Value:    hex.EncodeToString(encryptedMsg),
-		MaxAge:   age,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
@@ -249,14 +242,7 @@ func verifyCookie(req *http.Request) error {
 		return err
 	}
 
-	expiryTime, err := strconv.ParseInt(string(plaintext), 10, 64)
-	if err != nil {
-		return err
-	}
-
-	if time.Now().Unix() > expiryTime {
-		return errors.New("Cookie has expired")
-	}
+	log.Printf("[%s] %s\n", string(plaintext), req.URL)
 
 	return nil
 }

@@ -12,12 +12,6 @@ import (
 )
 
 func displayAdvanced(w http.ResponseWriter, req *http.Request) {
-	err := verifyCookie(req)
-	if err != nil {
-		http.Redirect(w, req, "/auth", http.StatusFound)
-		return
-	}
-
 	if req.Method != "GET" {
 		http.Redirect(w, req, "/#Error:Something has gone wrong, try again", http.StatusFound)
 		return
@@ -41,7 +35,7 @@ func displayAdvanced(w http.ResponseWriter, req *http.Request) {
 		templateInformation[name] = string(bytes.Split(s, []byte(" "))[4])
 	}
 
-	err = renderTemplate(w, "advanced.html", &templateInformation)
+	err := renderTemplate(w, "advanced.html", &templateInformation)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprintf(w, "Something went wrong")
@@ -51,18 +45,12 @@ func displayAdvanced(w http.ResponseWriter, req *http.Request) {
 }
 
 func queueMagnet(w http.ResponseWriter, req *http.Request) {
-	err := verifyCookie(req)
-	if err != nil {
-		http.Redirect(w, req, "/auth", http.StatusFound)
-		return
-	}
-
 	if req.Method != "POST" {
 		http.Redirect(w, req, "/#Error:Something has gone wrong, try again", http.StatusFound)
 		return
 	}
 
-	err = req.ParseForm()
+	err := req.ParseForm()
 	if err != nil {
 		http.Redirect(w, req, "/advanced#Error:Loading Magnets has failed", 302)
 		return

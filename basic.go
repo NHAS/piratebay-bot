@@ -219,7 +219,7 @@ outer:
 				z.Next()
 				e := parseTableRow(z)
 				e.Identifier = randomString(16)
-				if e.Magnet != "" {
+				if e.Magnet != "" && e.OutputDirectory != "" {
 					results = append(results, e)
 					total++
 				}

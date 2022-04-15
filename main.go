@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -66,18 +67,22 @@ func startWebserver(args ...string) {
 		log.Fatal(err)
 	}
 
+	authedMux := http.NewServeMux()
+
+	authedMux.HandleFunc("/advanced", displayAdvanced)
+	authedMux.HandleFunc("/manualqueue", queueMagnet)
+
+	authedMux.HandleFunc("/download", queueDownload)
+	authedMux.HandleFunc("/search", search)
+
+	authedMux.HandleFunc("/", serveIndex)
+
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/auth", loginRequest)
-
-	mux.HandleFunc("/advanced", displayAdvanced)
-	mux.HandleFunc("/manualqueue", queueMagnet)
-
-	mux.HandleFunc("/download", queueDownload)
-	mux.HandleFunc("/search", search)
-
 	mux.Handle("/src/", http.StripPrefix("/src/", http.FileServer(http.Dir("./src"))))
-	mux.HandleFunc("/", serveIndex)
+
+	mux.HandleFunc("/auth", loginRequest)
+	mux.Handle("/", checkAuth(authedMux))
 
 	log.Println("Listening on", args[0])
 	log.Fatal(http.ListenAndServe(args[0], http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +95,18 @@ func startWebserver(args ...string) {
 		}
 		mux.ServeHTTP(w, r)
 	})))
+}
+
+func checkAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		err := verifyCookie(req)
+		if err != nil {
+			http.Redirect(w, req, "/auth", http.StatusFound)
+			return
+		}
+
+		next.ServeHTTP(w, req)
+	})
 }
 
 func main() {
@@ -121,6 +138,11 @@ func main() {
 		}
 
 		err = RemoveUser(os.Args[2])
+	case "help", "-h", "--help":
+		fmt.Println(os.Args[0], "[start|add|remove]")
+		fmt.Println("\tstart\tStart the application listening on port specified by argv[2]")
+		fmt.Println("\tadd\tAdd user to authorized list")
+		fmt.Println("\tremove\tRemove user from authorized list")
 	default:
 		log.Fatal("Unknown command")
 	}
