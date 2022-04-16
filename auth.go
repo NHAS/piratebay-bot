@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/argon2"
 )
@@ -212,6 +213,7 @@ func mintCookie(w http.ResponseWriter, username string) {
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
+		Expires:  time.Now().Add(7 * 24 * time.Hour),
 	}
 
 	http.SetCookie(w, &c)
